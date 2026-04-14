@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Start Screen Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: sans-serif; background: #f0f0f0; }
+        
+        .start-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 30px;
+        }
+        
+        .start-screen h2 {
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            padding: 15px 50px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: #1e88e5;
+            color: white;
+        }
+        
+        .content {
+            padding: 50px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <h1>Main Content</h1>
+        <p>This should be behind the overlay</p>
+    </div>
+    
+    <div class="start-screen" id="startScreen">
+        <h2>Start Screen Overlay</h2>
+        <p style="color: white; margin-bottom: 20px;">Can you see this overlay?</p>
+        <button class="btn" id="testBtn">Click Me</button>
+    </div>
+    
+    <script>
+        console.log('Page loaded');
+        const startScreen = document.getElementById('startScreen');
+        const btn = document.getElementById('testBtn');
+        
+        console.log('startScreen:', startScreen);
+        console.log('startScreen display:', startScreen.style.display);
+        console.log('startScreen computed display:', window.getComputedStyle(startScreen).display);
+        
+        btn.addEventListener('click', function() {
+            console.log('Button clicked!');
+            startScreen.style.display = 'none';
+            console.log('Overlay hidden');
+        });
+    </script>
+</body>
+</html>

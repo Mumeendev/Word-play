@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Play - With Error Display</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        #error-display {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0,0,0,0.95);
+            color: #ff4444;
+            padding: 20px;
+            font-family: monospace;
+            font-size: 13px;
+            max-height: 40vh;
+            overflow-y: auto;
+            z-index: 10000;
+            border-top: 3px solid #ff4444;
+        }
+        #error-display .log { color: #4cf; }
+        #error-display .success { color: #4f4; }
+        #error-display .error { color: #f44; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>WORD PLAY</h1>
+            <p class="subtitle">Form words with the letters you're given</p>
+        </header>
+
+        <div class="game-section">
+            <div class="player-info">
+                <div class="input-group">
+                    <label for="playerName">Player Name:</label>
+                    <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
+                </div>
+                <div class="score-display"><span>Score: </span><span id="score">0</span></div>
+                <div class="round-display"><span>Round: </span><span id="round">1</span><span> / </span><span id="maxRounds">5</span></div>
+            </div>
+            <div class="letters-container" id="lettersContainer"></div>
+            <div class="word-form">
+                <input type="text" id="wordInput" placeholder="Type your word here..." autocomplete="off" disabled>
+                <div class="button-group">
+                    <button id="submitWord" class="btn btn-primary" disabled>Submit Word</button>
+                    <button id="clearWord" class="btn btn-secondary">Clear</button>
+                    <button id="shuffleLetters" class="btn btn-secondary">Shuffle</button>
+                    <button id="newRound" class="btn btn-primary" disabled>New Round</button>
+                </div>
+            </div>
+            <div class="message" id="message"></div>
+            <div class="word-history"><h3>Words Formed</h3><ul id="wordList"></ul></div>
+        </div>
+
+        <div class="leaderboard-section">
+            <h2>Leaderboard</h2>
+            <button id="refreshLeaderboard" class="btn btn-secondary">Refresh</button>
+            <ol id="leaderboard" class="leaderboard-list"><li class="loading">Loading...</li></ol>
+        </div>
+
+        <div class="start-screen" id="startScreen">
+            <h2>Welcome to Word Play!</h2>
+            <div class="rules">
+                <h3>How to Play:</h3>
+                <ul>
+                    <li>You'll receive 7 random letters each round</li>
+                    <li>Form as many valid English words as you can</li>
+                    <li>Longer words and rare letters score more points</li>
+                    <li>You have 5 rounds to get the highest score</li>
+                    <li>Your final score will be added to the leaderboard</li>
+                </ul>
+            </div>
+            <button id="startGame" class="btn btn-primary btn-large">Start Game</button>
+        </div>
+
+        <div class="end-screen" id="endScreen" style="display:none;">
+            <h2>Game Over!</h2>
+            <div class="final-score"><p>Your Final Score: <span id="finalScore">0</span></p></div>
+            <div class="button-group">
+                <button id="saveScore" class="btn btn-primary">Save to Leaderboard</button>
+                <button id="playAgain" class="btn btn-secondary">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="error-display"></div>
+
+    <script>
+        // Error display setup
+        const errorDisplay = document.getElementById('error-display');
+        function log(msg, type = 'log') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            errorDisplay.appendChild(div);
+            errorDisplay.scrollTop = errorDisplay.scrollHeight;
+            console.log(`[${type}]`, msg);
+        }
+        
+        // Catch all errors
+        window.onerror = function(msg, url, line, col, error) {
+            log(`ERROR: ${msg} (line ${line})`, 'error');
+            return false;
+        };
+        
+        window.addEventListener('unhandledrejection', function(e) {
+            log(`PROMISE ERROR: ${e.reason}`, 'error');
+        });
+        
+        log('Page loaded successfully', 'success');
+        log('User Agent: ' + navigator.userAgent, 'log');
+    </script>
+    <script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Play - Letter Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>WORD PLAY</h1>
+            <p class="subtitle">Form words with the letters you're given</p>
+        </header>
+
+        <div class="game-section">
+            <div class="player-info">
+                <div class="score-display">Score: <span id="score">0</span></div>
+                <div class="round-display">Round: <span id="round">1</span> / <span id="maxRounds">5</span></div>
+                <div class="player-name-display">Player: <span id="playerDisplay">---</span></div>
+            </div>
+            <div class="letters-container" id="lettersContainer"></div>
+            <div class="word-form">
+                <input type="text" id="wordInput" placeholder="Type your word here..." autocomplete="off" disabled>
+                <div class="button-group">
+                    <button id="submitWord" class="btn btn-primary" disabled>Submit Word</button>
+                    <button id="clearWord" class="btn btn-secondary">Clear</button>
+                    <button id="shuffleLetters" class="btn btn-secondary">Shuffle</button>
+                    <button id="newRound" class="btn btn-primary" disabled>New Round</button>
+                </div>
+            </div>
+            <div class="message" id="message"></div>
+            <div class="word-history">
+                <h3>Words Formed</h3>
+                <ul id="wordList"></ul>
+            </div>
+        </div>
+
+        <div class="leaderboard-section">
+            <h2>Leaderboard</h2>
+            <button id="refreshLeaderboard" class="btn btn-secondary">Refresh</button>
+            <ol id="leaderboard" class="leaderboard-list">
+                <li class="loading">No scores yet. Be the first!</li>
+            </ol>
+        </div>
+
+        <!-- START SCREEN: Name input is INSIDE the overlay -->
+        <div class="overlay" id="startScreen">
+            <div class="overlay-content">
+                <h2>Welcome to Word Play!</h2>
+                <div class="rules">
+                    <h3>How to Play:</h3>
+                    <ul>
+                        <li>You'll receive 7 random letters each round</li>
+                        <li>Form as many valid English words as you can</li>
+                        <li>Longer words and rare letters score more points</li>
+                        <li>You have 5 rounds to get the highest score</li>
+                        <li>Your final score will be added to the leaderboard</li>
+                    </ul>
+                </div>
+                <div class="name-input-group">
+                    <label for="playerName">Enter your name:</label>
+                    <input type="text" id="playerName" placeholder="Type your name here" maxlength="20" autocomplete="off">
+                </div>
+                <button id="startGame" class="btn btn-primary btn-large">Start Game</button>
+            </div>
+        </div>
+
+        <!-- END SCREEN -->
+        <div class="overlay hidden" id="endScreen">
+            <div class="overlay-content">
+                <h2>Game Over!</h2>
+                <div class="final-score">
+                    <p>Your Final Score: <span id="finalScore">0</span></p>
+                </div>
+                <div class="button-group">
+                    <button id="saveScore" class="btn btn-primary">Save to Leaderboard</button>
+                    <button id="playAgain" class="btn btn-secondary">Play Again</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

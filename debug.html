@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Play - Debug</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        #debug-output {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.9);
+            color: #0f0;
+            padding: 15px;
+            font-size: 12px;
+            max-width: 400px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 9999;
+            border-radius: 8px;
+            font-family: monospace;
+        }
+        #debug-output .error { color: #f44; }
+        #debug-output .success { color: #0f0; }
+        #debug-output .info { color: #4cf; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>WORD PLAY</h1>
+            <p class="subtitle">Form words with the letters you're given</p>
+        </header>
+
+        <div class="game-section">
+            <div class="player-info">
+                <div class="input-group">
+                    <label for="playerName">Player Name:</label>
+                    <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
+                </div>
+                <div class="score-display">
+                    <span>Score: </span>
+                    <span id="score">0</span>
+                </div>
+                <div class="round-display">
+                    <span>Round: </span>
+                    <span id="round">1</span>
+                    <span> / </span>
+                    <span id="maxRounds">5</span>
+                </div>
+            </div>
+
+            <div class="letters-container" id="lettersContainer">
+                <!-- Letter tiles will be generated here -->
+            </div>
+
+            <div class="word-form">
+                <input type="text" id="wordInput" placeholder="Type your word here..." autocomplete="off" disabled>
+                <div class="button-group">
+                    <button id="submitWord" class="btn btn-primary" disabled>Submit Word</button>
+                    <button id="clearWord" class="btn btn-secondary">Clear</button>
+                    <button id="shuffleLetters" class="btn btn-secondary">Shuffle</button>
+                    <button id="newRound" class="btn btn-primary" disabled>New Round</button>
+                </div>
+            </div>
+
+            <div class="message" id="message"></div>
+
+            <div class="word-history">
+                <h3>Words Formed</h3>
+                <ul id="wordList"></ul>
+            </div>
+        </div>
+
+        <div class="leaderboard-section">
+            <h2>Leaderboard</h2>
+            <button id="refreshLeaderboard" class="btn btn-secondary">Refresh</button>
+            <ol id="leaderboard" class="leaderboard-list">
+                <li class="loading">Loading leaderboard...</li>
+            </ol>
+        </div>
+
+        <div class="start-screen" id="startScreen">
+            <h2>Welcome to Word Play!</h2>
+            <div class="rules">
+                <h3>How to Play:</h3>
+                <ul>
+                    <li>You'll receive 7 random letters each round</li>
+                    <li>Form as many valid English words as you can</li>
+                    <li>Longer words and rare letters score more points</li>
+                    <li>You have 5 rounds to get the highest score</li>
+                    <li>Your final score will be added to the leaderboard</li>
+                </ul>
+            </div>
+            <button id="startGame" class="btn btn-primary btn-large">Start Game</button>
+        </div>
+
+        <div class="end-screen" id="endScreen" style="display:none;">
+            <h2>Game Over!</h2>
+            <div class="final-score">
+                <p>Your Final Score: <span id="finalScore">0</span></p>
+            </div>
+            <div class="button-group">
+                <button id="saveScore" class="btn btn-primary">Save to Leaderboard</button>
+                <button id="playAgain" class="btn btn-secondary">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="debug-output"></div>
+
+    <script>
+        // Debug logger
+        const debugEl = document.getElementById('debug-output');
+        function debug(msg, type = 'info') {
+            const line = document.createElement('div');
+            line.className = type;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            debugEl.appendChild(line);
+            debugEl.scrollTop = debugEl.scrollHeight;
+            console.log(`[${type.toUpperCase()}]`, msg);
+        }
+
+        // Override console.error to catch errors
+        const originalError = console.error;
+        console.error = function(...args) {
+            debug('ERROR: ' + args.join(' '), 'error');
+            originalError.apply(console, args);
+        };
+
+        // Catch unhandled errors
+        window.addEventListener('error', function(e) {
+            debug(`Uncaught error: ${e.message} at ${e.filename}:${e.lineno}`, 'error');
+        });
+
+        debug('Page loaded, loading game...');
+    </script>
+    <script src="game.js"></script>
+</body>
+</html>

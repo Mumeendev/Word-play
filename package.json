@@ -1,0 +1,16 @@
+{
+  "name": "word-play-game",
+  "version": "1.0.0",
+  "description": "A word play game with leaderboard functionality",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel"
+  },
+  "dependencies": {
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "vercel": "^32.0.0"
+  }
+}

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Play - DEBUG</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
+        
+        /* DEBUG BOX */
+        #debug-box {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 13px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 99999;
+            border-top: 3px solid #0f0;
+        }
+        #debug-box .error { color: #f44; font-weight: bold; }
+        #debug-box .ok { color: #0f0; }
+        #debug-box .info { color: #4cf; }
+        
+        /* GAME HEADER */
+        .header {
+            text-align: center;
+            background: #1a1a1a;
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .header h1 { font-size: 2rem; }
+        
+        /* GAME SECTION */
+        #gameSection {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .player-info {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .player-info input {
+            padding: 10px 15px;
+            border: 2px solid #1e88e5;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .score-display {
+            background: #1a1a1a;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        
+        #lettersContainer {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 30px 0;
+            min-height: 80px;
+        }
+        .letter-tile {
+            width: 65px;
+            height: 65px;
+            background: linear-gradient(145deg, #1e88e5, #0d47a1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            position: relative;
+        }
+        .letter-tile .points {
+            position: absolute;
+            bottom: 4px;
+            right: 6px;
+            font-size: 0.6rem;
+            opacity: 0.8;
+        }
+        .letter-tile.used { opacity: 0.4; }
+        
+        #wordInput {
+            width: 100%;
+            max-width: 400px;
+            padding: 15px;
+            border: 3px solid #1e88e5;
+            border-radius: 10px;
+            font-size: 1.3rem;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-primary { background: #1e88e5; color: white; }
+        .btn-secondary { background: #1a1a1a; color: white; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-large { padding: 15px 50px; font-size: 1.2rem; }
+        
+        #message {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            min-height: 50px;
+        }
+        #message.success { background: #e3f2fd; color: #0d47a1; }
+        #message.error { background: #ffebee; color: #c62828; }
+        #message.info { background: #e8f4f8; color: #1a1a1a; }
+        
+        #wordList {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        #wordList li {
+            background: #1a1a1a;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+        }
+        #wordList li .word-points { color: #1e88e5; margin-left: 8px; font-weight: 700; }
+        
+        /* OVERLAY */
+        #startScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 30px;
+        }
+        #startScreen h2 {
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+        }
+        .rules {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            margin-bottom: 30px;
+        }
+        .rules h3 { margin-bottom: 20px; }
+        .rules ul { list-style: none; }
+        .rules li {
+            padding: 10px 0;
+            border-bottom: 1px solid #e8f4f8;
+        }
+        .rules li::before {
+            content: "✓ ";
+            color: #1e88e5;
+            font-weight: 700;
+            margin-right: 10px;
+        }
+        
+        #endScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 30px;
+        }
+        #endScreen h2 { color: white; font-size: 2.5rem; margin-bottom: 30px; }
+        .final-score {
+            background: white;
+            padding: 30px 50px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .final-score span { color: #1e88e5; font-size: 2.5rem; font-weight: 700; }
+        
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <!-- START SCREEN OVERLAY -->
+    <div id="startScreen">
+        <h2>Welcome to Word Play!</h2>
+        <div class="rules">
+            <h3>How to Play:</h3>
+            <ul>
+                <li>You'll receive 7 random letters each round</li>
+                <li>Form as many valid English words as you can</li>
+                <li>Longer words and rare letters score more points</li>
+                <li>You have 5 rounds to get the highest score</li>
+                <li>Your final score will be added to the leaderboard</li>
+            </ul>
+        </div>
+        <button id="startGame" class="btn btn-primary btn-large">Start Game</button>
+    </div>
+
+    <!-- END SCREEN OVERLAY -->
+    <div id="endScreen" class="hidden">
+        <h2>Game Over!</h2>
+        <div class="final-score">
+            <p>Your Final Score: <span id="finalScore">0</span></p>
+        </div>
+        <div class="button-group">
+            <button id="saveScore" class="btn btn-primary">Save to Leaderboard</button>
+            <button id="playAgain" class="btn btn-secondary">Play Again</button>
+        </div>
+    </div>
+
+    <!-- MAIN GAME -->
+    <div class="header">
+        <h1>WORD PLAY</h1>
+        <p style="color: #1e88e5; margin-top: 8px;">Form words with the letters you're given</p>
+    </div>
+
+    <div id="gameSection">
+        <div class="player-info">
+            <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
+            <div class="score-display">Score: <span id="score">0</span></div>
+            <div class="score-display">Round: <span id="round">1</span> / <span id="maxRounds">5</span></div>
+        </div>
+
+        <div id="lettersContainer"></div>
+
+        <input type="text" id="wordInput" placeholder="Type your word here..." autocomplete="off" disabled>
+
+        <div class="button-group">
+            <button id="submitWord" class="btn btn-primary" disabled>Submit Word</button>
+            <button id="clearWord" class="btn btn-secondary">Clear</button>
+            <button id="shuffleLetters" class="btn btn-secondary">Shuffle</button>
+            <button id="newRound" class="btn btn-primary" disabled>New Round</button>
+        </div>
+
+        <div id="message"></div>
+
+        <h3 style="margin-top: 20px;">Words Formed</h3>
+        <ul id="wordList"></ul>
+    </div>
+
+    <!-- DEBUG BOX -->
+    <div id="debug-box"></div>
+
+    <script>
+        // ===== DEBUG LOGGER =====
+        var debugBox = document.getElementById('debug-box');
+        function debug(msg, type) {
+            type = type || 'info';
+            var line = document.createElement('div');
+            line.className = type;
+            line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+            debugBox.appendChild(line);
+            debugBox.scrollTop = debugBox.scrollHeight;
+            console.log('[' + type.toUpperCase() + ']', msg);
+        }
+
+        // Catch all errors
+        window.onerror = function(msg, url, lineNo, colNo, error) {
+            debug('ERROR: ' + msg + ' (line ' + lineNo + ')', 'error');
+            return false;
+        };
+
+        debug('Page loaded', 'ok');
+
+        // ===== WAIT FOR DOM =====
+        function waitForDOM() {
+            if (document.readyState === 'complete') {
+                debug('DOM is fully loaded', 'ok');
+                startInit();
+            } else {
+                debug('Waiting for DOM...', 'info');
+                document.addEventListener('DOMContentLoaded', function() {
+                    debug('DOMContentLoaded fired', 'ok');
+                    startInit();
+                });
+            }
+        }
+
+        function startInit() {
+            debug('Checking for startScreen element...');
+            var startScreenEl = document.getElementById('startScreen');
+            if (!startScreenEl) {
+                debug('ERROR: startScreen element NOT FOUND!', 'error');
+                return;
+            }
+            debug('startScreen element found', 'ok');
+
+            var startGameBtn = document.getElementById('startGame');
+            if (!startGameBtn) {
+                debug('ERROR: startGame button NOT FOUND!', 'error');
+                return;
+            }
+            debug('startGame button found', 'ok');
+
+            // CRITICAL: Attach event listener
+            debug('Attaching click listener to Start Game button...');
+            startGameBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                debug('=== START GAME BUTTON CLICKED! ===', 'ok');
+                handleStartGame();
+            }, false);
+
+            debug('Click listener attached!', 'ok');
+            debug('Click the Start Game button now!', 'info');
+        }
+
+        function handleStartGame() {
+            debug('handleStartGame() called', 'ok');
+
+            var playerNameInput = document.getElementById('playerName');
+            var name = playerNameInput.value.trim();
+            debug('Name entered: "' + name + '"');
+
+            if (!name) {
+                debug('No name entered - showing message', 'error');
+                showMessage('Please enter your name first!', 'error');
+                playerNameInput.focus();
+                return;
+            }
+
+            debug('Hiding start screen overlay...');
+            var startScreen = document.getElementById('startScreen');
+            startScreen.classList.add('hidden');
+            debug('Start screen should now be hidden', 'ok');
+
+            debug('Generating letters...');
+            generateLetters();
+
+            debug('Enabling game controls...');
+            enableGameControls();
+
+            debug('Game started!', 'ok');
+        }
+
+        function generateLetters() {
+            var LETTERS = {
+                A: { points: 1 }, B: { points: 3 }, C: { points: 3 }, D: { points: 2 },
+                E: { points: 1 }, F: { points: 4 }, G: { points: 2 }, H: { points: 4 },
+                I: { points: 1 }, J: { points: 8 }, K: { points: 5 }, L: { points: 1 },
+                M: { points: 3 }, N: { points: 1 }, O: { points: 1 }, P: { points: 3 },
+                Q: { points: 10 }, R: { points: 1 }, S: { points: 1 }, T: { points: 1 },
+                U: { points: 1 }, V: { points: 4 }, W: { points: 4 }, X: { points: 8 },
+                Y: { points: 4 }, Z: { points: 10 }
+            };
+
+            var pool = [];
+            for (var letter in LETTERS) {
+                pool.push(letter);
+            }
+
+            var currentLetters = [];
+            for (var i = 0; i < 7; i++) {
+                var idx = Math.floor(Math.random() * pool.length);
+                var sel = pool[idx];
+                currentLetters.push({ letter: sel, points: LETTERS[sel].points });
+            }
+
+            debug('Letters: ' + currentLetters.map(function(l) { return l.letter; }).join(', '));
+
+            var container = document.getElementById('lettersContainer');
+            container.innerHTML = '';
+
+            for (var j = 0; j < currentLetters.length; j++) {
+                (function(index) {
+                    var item = currentLetters[index];
+                    var tile = document.createElement('div');
+                    tile.className = 'letter-tile';
+                    tile.innerHTML = item.letter + '<span class="points">' + item.points + '</span>';
+                    tile.addEventListener('click', function() {
+                        useLetter(index, currentLetters, container);
+                    });
+                    container.appendChild(tile);
+                })(j);
+            }
+        }
+
+        function useLetter(index, currentLetters, container) {
+            var tiles = container.querySelectorAll('.letter-tile');
+            if (tiles[index].classList.contains('used')) return;
+
+            tiles[index].classList.add('used');
+            document.getElementById('wordInput').value += currentLetters[index].letter;
+        }
+
+        function enableGameControls() {
+            document.getElementById('wordInput').disabled = false;
+            document.getElementById('submitWord').disabled = false;
+        }
+
+        function showMessage(text, type) {
+            var msgEl = document.getElementById('message');
+            msgEl.textContent = text;
+            msgEl.className = type;
+        }
+
+        // Event listeners for game controls
+        document.addEventListener('click', function(e) {
+            var id = e.target.id;
+            if (id === 'clearWord') {
+                document.getElementById('wordInput').value = '';
+                var container = document.getElementById('lettersContainer');
+                var tiles = container.querySelectorAll('.letter-tile');
+                for (var i = 0; i < tiles.length; i++) {
+                    tiles[i].classList.remove('used');
+                }
+            }
+            if (id === 'shuffleLetters') {
+                debug('Shuffle clicked');
+            }
+        });
+
+        document.getElementById('wordInput').addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+
+        // Start waiting for DOM
+        waitForDOM();
+    </script>
+</body>
+</html>
