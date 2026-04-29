@@ -19,18 +19,24 @@
         playerName: '',
         score: 0,
         round: 1,
-        maxRounds: 5,
+        maxRounds: 15,
         currentLetters: [],
         usedLetters: [],
         wordsFormed: [],
-        gameActive: false
+        gameActive: false,
+        questions: [],
+        usedQuestionIndices: [],
+        currentQuestion: null,
+        authAction: 'login' // 'login' or 'signup'
     };
 
     // DOM element references
     var el = {};
 
-    // Check if running on file:// protocol (no server)
+    // Check if running on file:// protocol or GitHub Pages (no server-side API support)
     var isLocalFile = window.location.protocol === 'file:';
+    var isGitHubPages = window.location.hostname.indexOf('github.io') !== -1;
+    var useLocalStorage = isLocalFile || isGitHubPages;
 
     // ===== INITIALIZATION =====
     function init() {
@@ -39,10 +45,15 @@
         el.endScreen = document.getElementById('endScreen');
         el.startGameBtn = document.getElementById('startGame');
         el.playerNameInput = document.getElementById('playerName');
+        el.playerPasswordInput = document.getElementById('playerPassword');
+        el.authTitle = document.getElementById('authTitle');
+        el.authToggle = document.getElementById('authToggle');
         el.playerDisplay = document.getElementById('playerDisplay');
         el.scoreDisplay = document.getElementById('score');
         el.roundDisplay = document.getElementById('round');
         el.maxRoundsDisplay = document.getElementById('maxRounds');
+        el.clueContainer = document.getElementById('clueContainer');
+        el.clueText = document.getElementById('clueText');
         el.lettersContainer = document.getElementById('lettersContainer');
         el.wordInput = document.getElementById('wordInput');
         el.submitWordBtn = document.getElementById('submitWord');
@@ -61,6 +72,21 @@
         el.maxRoundsDisplay.textContent = gameState.maxRounds;
 
         // === EVENT LISTENERS ===
+        // Auth Toggle
+        el.authToggle.addEventListener('click', function() {
+            if (gameState.authAction === 'login') {
+                gameState.authAction = 'signup';
+                el.authTitle.textContent = 'Sign Up for Word Play';
+                el.authToggle.textContent = 'Already have an account? Login';
+                el.startGameBtn.textContent = 'Sign Up & Start';
+            } else {
+                gameState.authAction = 'login';
+                el.authTitle.textContent = 'Login to Play';
+                el.authToggle.textContent = "Don't have an account? Sign up";
+                el.startGameBtn.textContent = 'Login & Start';
+            }
+        });
+
         // Start Game button
         el.startGameBtn.addEventListener('click', function(e) {
             e.preventDefault();
@@ -68,8 +94,8 @@
             startGame();
         }, false);
 
-        // Enter key on name input starts the game
-        el.playerNameInput.addEventListener('keydown', function(e) {
+        // Enter key on password input starts the game
+        el.playerPasswordInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 startGame();
@@ -92,14 +118,115 @@
         console.log('Word Play game initialized successfully!');
     }
 
-    // ===== START GAME =====
-    function startGame() {
-        var playerName = el.playerNameInput.value.trim();
+    // ===== FETCH QUESTIONS =====
+    async function fetchQuestions() {
+        try {
+            var response = await fetch('questions.csv');
+            var csvText = await response.text();
+            var lines = csvText.split('\n');
+            var questions = [];
+            
+            // Improved CSV parse to handle potential commas in clues
+            for (var i = 1; i < lines.length; i++) {
+                var line = lines[i].trim();
+                if (!line) continue;
+                
+                var lastCommaIndex = line.lastIndexOf(',');
+                if (lastCommaIndex !== -1) {
+                    var clue = line.substring(0, lastCommaIndex).trim();
+                    var answer = line.substring(lastCommaIndex + 1).trim().toUpperCase();
+                    
+                    // Remove quotes if present
+                    if (clue.startsWith('"') && clue.endsWith('"')) {
+                        clue = clue.substring(1, clue.length - 1);
+                    }
+                    if (answer.startsWith('"') && answer.endsWith('"')) {
+                        answer = answer.substring(1, answer.length - 1);
+                    }
+                    
+                    questions.push({
+                        clue: clue,
+                        answer: answer
+                    });
+                }
+            }
+            
+            gameState.questions = questions;
+            shuffleArray(gameState.questions);
+            console.log('Loaded and shuffled ' + questions.length + ' questions from CSV');
+        } catch (e) {
+            console.error('Error loading questions:', e);
+            // Fallback questions if CSV fails
+            gameState.questions = [
+                { clue: "A fruit that is often associated with New York City", answer: "APPLE" },
+                { clue: "The opposite of hot", answer: "COLD" },
+                { clue: "A large animal with a trunk", answer: "ELEPHANT" }
+            ];
+            shuffleArray(gameState.questions);
+        }
+    }
 
-        if (!playerName) {
-            showMessage('Please enter your name to start!', 'error');
-            el.playerNameInput.focus();
+    // ===== SHUFFLE ARRAY HELPER =====
+    function shuffleArray(array) {
+        for (var i = array.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var temp = array[i];
+            array[i] = array[j];
+            array[j] = temp;
+        }
+    }
+
+    // ===== START GAME =====
+    async function startGame() {
+        var playerName = el.playerNameInput.value.trim();
+        var password = el.playerPasswordInput.value.trim();
+
+        if (!playerName || !password) {
+            showMessage('Username and password are required!', 'error');
             return;
+        }
+
+        // --- AUTHENTICATION ---
+        el.startGameBtn.disabled = true;
+        el.startGameBtn.textContent = 'Authenticating...';
+
+        var authSuccess = false;
+
+        if (useLocalStorage) {
+            authSuccess = authLocal(gameState.authAction, playerName, password);
+        } else {
+            try {
+                var response = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: gameState.authAction,
+                        playerName: playerName,
+                        password: password
+                    })
+                });
+                var result = await response.json();
+                if (result.success) {
+                    authSuccess = true;
+                } else {
+                    showMessage(result.error || 'Authentication failed', 'error');
+                }
+            } catch (e) {
+                console.error('Auth API Error:', e);
+                // Fallback to local auth if server fails
+                authSuccess = authLocal(gameState.authAction, playerName, password);
+            }
+        }
+
+        if (!authSuccess) {
+            el.startGameBtn.disabled = false;
+            el.startGameBtn.textContent = (gameState.authAction === 'login' ? 'Login & Start' : 'Sign Up & Start');
+            return;
+        }
+
+        // --- LOAD QUESTIONS ---
+        if (gameState.questions.length === 0) {
+            await fetchQuestions();
         }
 
         gameState.playerName = playerName;
@@ -107,17 +234,48 @@
         gameState.score = 0;
         gameState.round = 1;
         gameState.wordsFormed = [];
+        gameState.usedQuestionIndices = [];
 
         // Update player display
         el.playerDisplay.textContent = playerName;
 
         // Hide start screen overlay
         el.startScreen.classList.add('hidden');
+        el.clueContainer.classList.remove('hidden');
 
         updateDisplay();
         generateLetters();
         enableGameControls();
-        showMessage('Welcome ' + playerName + '! Form words with your letters.', 'info');
+        showMessage('Welcome ' + playerName + '! Solve the clue to advance.', 'info');
+        
+        el.startGameBtn.disabled = false;
+        el.startGameBtn.textContent = (gameState.authAction === 'login' ? 'Login & Start' : 'Sign Up & Start');
+    }
+
+    // ===== LOCAL AUTH HELPER =====
+    function authLocal(action, playerName, password) {
+        var users = JSON.parse(localStorage.getItem('wordPlayUsers') || '{}');
+        
+        if (action === 'signup') {
+            if (users[playerName]) {
+                showMessage('Username already taken!', 'error');
+                return false;
+            }
+            users[playerName] = password;
+            localStorage.setItem('wordPlayUsers', JSON.stringify(users));
+            showMessage('Account created successfully!', 'success');
+            return true;
+        } else {
+            if (!users[playerName]) {
+                showMessage('User not found. Please sign up!', 'error');
+                return false;
+            }
+            if (users[playerName] !== password) {
+                showMessage('Incorrect password!', 'error');
+                return false;
+            }
+            return true;
+        }
     }
 
     // ===== GENERATE LETTERS =====
@@ -125,27 +283,54 @@
         gameState.currentLetters = [];
         gameState.usedLetters = [];
 
-        // Build letter pool
-        var pool = [];
-        for (var letter in LETTER_DISTRIBUTION) {
-            if (LETTER_DISTRIBUTION.hasOwnProperty(letter)) {
-                var data = LETTER_DISTRIBUTION[letter];
-                for (var i = 0; i < data.count; i++) {
-                    pool.push(letter);
-                }
+        // Pick a random question that hasn't been used yet
+        var availableIndices = [];
+        for (var i = 0; i < gameState.questions.length; i++) {
+            if (gameState.usedQuestionIndices.indexOf(i) === -1) {
+                availableIndices.push(i);
             }
         }
 
-        // Pick 7 random letters
-        for (var j = 0; j < 7; j++) {
-            var randomIndex = Math.floor(Math.random() * pool.length);
-            var selectedLetter = pool[randomIndex];
-            gameState.currentLetters.push({
-                letter: selectedLetter,
-                points: LETTER_DISTRIBUTION[selectedLetter].points
-            });
-            pool.splice(randomIndex, 1);
+        if (availableIndices.length === 0) {
+            // All questions used, reset or end game
+            gameState.usedQuestionIndices = [];
+            availableIndices = Array.from({length: gameState.questions.length}, (_, i) => i);
         }
+
+        var randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+        gameState.usedQuestionIndices.push(randomIndex);
+        gameState.currentQuestion = gameState.questions[randomIndex];
+
+        // Display the clue
+        el.clueText.textContent = gameState.currentQuestion.clue;
+
+        // Build letter pool from the answer
+        var pool = [];
+        var answer = gameState.currentQuestion.answer;
+        for (var j = 0; j < answer.length; j++) {
+            var letter = answer[j];
+            pool.push({
+                letter: letter,
+                points: (LETTER_DISTRIBUTION[letter] ? LETTER_DISTRIBUTION[letter].points : 1)
+            });
+        }
+
+        // Add some random letters to fill up to at least 7 letters if needed
+        if (pool.length < 7) {
+            var extraCount = 7 - pool.length;
+            var allLetters = Object.keys(LETTER_DISTRIBUTION);
+            for (var k = 0; k < extraCount; k++) {
+                var randomLetter = allLetters[Math.floor(Math.random() * allLetters.length)];
+                pool.push({
+                    letter: randomLetter,
+                    points: LETTER_DISTRIBUTION[randomLetter].points
+                });
+            }
+        }
+
+        // Shuffle the pool
+        pool.sort(function() { return Math.random() - 0.5; });
+        gameState.currentLetters = pool;
 
         renderLetters();
 
@@ -228,15 +413,29 @@
             return;
         }
 
-        var isValid = await validateWord(word);
+        // Check if it matches the current question's answer
+        var isClueAnswer = (word === gameState.currentQuestion.answer);
+        
+        var isValid = isClueAnswer || await validateWord(word);
         if (!isValid) {
             showMessage('Invalid word! Try again.', 'error');
             return;
         }
 
         var wordScore = calculateWordScore(word);
+        
+        if (isClueAnswer) {
+            wordScore += 50; // Big bonus for solving the clue
+            showMessage('AMAZING! You solved the clue! +50 bonus!', 'success');
+            el.newRoundBtn.disabled = false;
+            // Highlight the fact that they solved it
+            gameState.wordsFormed.push({ word: word + ' (SOLVED)', score: wordScore });
+        } else {
+            gameState.wordsFormed.push({ word: word, score: wordScore });
+            showMessage('+' + wordScore + ' points! "' + word + '" is valid!', 'success');
+        }
+
         gameState.score += wordScore;
-        gameState.wordsFormed.push({ word: word, score: wordScore });
 
         // Reset
         gameState.usedLetters = [];
@@ -245,8 +444,13 @@
         updateDisplay();
         renderLetters();
         updateWordList();
-        showMessage('+' + wordScore + ' points! "' + word + '" is valid!', 'success');
-        el.newRoundBtn.disabled = false;
+        
+        if (isClueAnswer) {
+            // Optional: Auto-advance to next round after a delay?
+            // For now, let them click "New Round"
+            el.wordInput.disabled = true;
+            el.submitWordBtn.disabled = true;
+        }
     }
 
     // ===== CHECK IF WORD CAN BE FORMED =====
@@ -351,16 +555,53 @@
         el.message.textContent = text;
         el.message.className = 'message ' + type;
 
+        if (type === 'success' && text.includes('solved')) {
+            playSuccessSound();
+        }
+
         setTimeout(function() {
             el.message.textContent = '';
             el.message.className = 'message';
         }, 3000);
     }
 
+    // ===== SOUND EFFECTS =====
+    function playSuccessSound() {
+        try {
+            var AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            
+            var ctx = new AudioContext();
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+            
+            osc.type = 'triangle';
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            var now = ctx.currentTime;
+            
+            // "Catchy" Arpeggio
+            osc.frequency.setValueAtTime(523.25, now); // C5
+            osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.1); // E5
+            osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.2); // G5
+            osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.3); // C6
+            
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+            
+            osc.start(now);
+            osc.stop(now + 0.5);
+        } catch (e) {
+            console.log('Audio not supported or blocked');
+        }
+    }
+
     // ===== RESET GAME =====
     function resetGame() {
         el.endScreen.classList.add('hidden');
         el.startScreen.classList.remove('hidden');
+        el.clueContainer.classList.add('hidden');
         el.playerDisplay.textContent = '---';
 
         gameState = {
@@ -371,36 +612,45 @@
             currentLetters: [],
             usedLetters: [],
             wordsFormed: [],
-            gameActive: false
+            gameActive: false,
+            questions: gameState.questions, // Keep loaded questions
+            usedQuestionIndices: [],
+            currentQuestion: null
         };
 
         el.wordList.innerHTML = '';
         el.wordInput.value = '';
+        el.playerPasswordInput.value = '';
         el.lettersContainer.innerHTML = '';
         updateDisplay();
     }
 
     // ===== SAVE SCORE =====
     async function saveScore() {
-        if (isLocalFile) {
-            showMessage('Leaderboard requires a server. Deploy to Vercel to enable!', 'error');
-            return;
-        }
-
         el.saveScoreBtn.disabled = true;
         el.saveScoreBtn.textContent = 'Saving...';
+
+        var scoreData = {
+            playerName: gameState.playerName,
+            score: gameState.score,
+            roundsPlayed: gameState.round,
+            wordsFormed: gameState.wordsFormed.length,
+            wordsList: gameState.wordsFormed
+        };
+
+        if (useLocalStorage) {
+            saveScoreToLocal(scoreData);
+            showMessage('Score saved to your device!', 'success');
+            fetchLeaderboard();
+            el.saveScoreBtn.textContent = 'Saved!';
+            return;
+        }
 
         try {
             var response = await fetch('/api/leaderboard', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    playerName: gameState.playerName,
-                    score: gameState.score,
-                    roundsPlayed: gameState.round,
-                    wordsFormed: gameState.wordsFormed.length,
-                    wordsList: gameState.wordsFormed
-                })
+                body: JSON.stringify(scoreData)
             });
 
             var result = await response.json();
@@ -413,17 +663,51 @@
                 throw new Error(result.error || 'Failed to save');
             }
         } catch (e) {
-            showMessage('Error saving score. Please try again.', 'error');
-            el.saveScoreBtn.disabled = false;
-            el.saveScoreBtn.textContent = 'Save to Leaderboard';
+            console.error('API Save Error:', e);
+            // Fallback to local if API fails
+            saveScoreToLocal(scoreData);
+            showMessage('Server error. Score saved to your device instead.', 'info');
+            fetchLeaderboard();
+            el.saveScoreBtn.textContent = 'Saved!';
         }
+    }
+
+    // ===== LOCAL STORAGE HELPERS =====
+    function saveScoreToLocal(data) {
+        var scores = JSON.parse(localStorage.getItem('wordPlayScores') || '[]');
+        
+        // Update or add participant
+        var existing = scores.find(function(s) { return s.player_name === data.playerName; });
+        if (existing) {
+            existing.total_games++;
+            existing.total_score += data.score;
+            existing.score = Math.max(existing.score, data.score);
+            existing.total_words_formed += data.wordsFormed;
+        } else {
+            scores.push({
+                player_name: data.playerName,
+                score: data.score,
+                total_games: 1,
+                total_score: data.score,
+                total_words_formed: data.wordsFormed,
+                created_at: new Date().toISOString()
+            });
+        }
+        
+        // Sort by score
+        scores.sort(function(a, b) { return b.score - a.score; });
+        localStorage.setItem('wordPlayScores', JSON.stringify(scores.slice(0, 50)));
     }
 
     // ===== FETCH LEADERBOARD =====
     async function fetchLeaderboard() {
-        // Skip if running without a server (file:// protocol)
-        if (isLocalFile) {
-            el.leaderboard.innerHTML = '<li class="loading">Leaderboard requires a server. Deploy to Vercel to enable!</li>';
+        if (useLocalStorage) {
+            var localScores = JSON.parse(localStorage.getItem('wordPlayScores') || '[]');
+            if (localScores.length > 0) {
+                displayLeaderboard(localScores);
+            } else {
+                el.leaderboard.innerHTML = '<li class="loading">No scores yet. Be the first!</li>';
+            }
             return;
         }
 
@@ -436,9 +720,20 @@
             if (result.success && result.scores && result.scores.length > 0) {
                 displayLeaderboard(result.scores);
             } else {
-                el.leaderboard.innerHTML = '<li class="loading">No scores yet. Be the first!</li>';
+                // If API returns success but no scores, try local
+                fetchLeaderboardLocal();
             }
         } catch (e) {
+            console.error('API Fetch Error:', e);
+            fetchLeaderboardLocal();
+        }
+    }
+
+    function fetchLeaderboardLocal() {
+        var localScores = JSON.parse(localStorage.getItem('wordPlayScores') || '[]');
+        if (localScores.length > 0) {
+            displayLeaderboard(localScores);
+        } else {
             el.leaderboard.innerHTML = '<li class="loading">No scores yet. Be the first!</li>';
         }
     }

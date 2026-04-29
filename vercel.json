@@ -20,6 +20,10 @@
   ],
   "routes": [
     {
+      "src": "/api/auth",
+      "dest": "/api/auth.js"
+    },
+    {
       "src": "/api/leaderboard",
       "dest": "/api/leaderboard.js"
     },

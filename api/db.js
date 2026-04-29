@@ -14,6 +14,7 @@ async function initDB() {
             CREATE TABLE IF NOT EXISTS participants (
                 id SERIAL PRIMARY KEY,
                 player_name VARCHAR(50) NOT NULL UNIQUE,
+                password VARCHAR(255), -- Stored as plain text for this demo (Warning: Use hashing in production)
                 total_games INTEGER DEFAULT 0,
                 total_score INTEGER DEFAULT 0,
                 best_score INTEGER DEFAULT 0,
@@ -22,6 +23,16 @@ async function initDB() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+        `);
+
+        // Add password column if it doesn't exist (for existing databases)
+        await client.query(`
+            DO $$ 
+            BEGIN 
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='participants' AND column_name='password') THEN
+                    ALTER TABLE participants ADD COLUMN password VARCHAR(255);
+                END IF;
+            END $$;
         `);
 
         // Game sessions table - stores each individual game played

@@ -103,6 +103,32 @@ header h1 {
     font-size: 1.1rem;
 }
 
+/* Clue Display */
+.clue-container {
+    background: var(--light-blue);
+    border-left: 5px solid var(--blue);
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.clue-label {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--blue);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.clue-text {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--black);
+    line-height: 1.4;
+}
+
 .score-display span:last-child,
 .round-display span:nth-child(2),
 .round-display span:nth-child(4) {
@@ -447,9 +473,28 @@ header h1 {
     max-width: 100%;
 }
 
-.name-input-group input:focus {
-    border-color: #0d47a1;
-    box-shadow: 0 0 15px rgba(30, 136, 229, 0.3);
+.auth-label {
+    margin-top: 15px;
+    display: block;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.auth-input {
+    margin-top: 5px;
+}
+
+.auth-toggle {
+    color: #1e88e5;
+    cursor: pointer;
+    margin-top: 15px;
+    text-decoration: underline;
+    font-size: 0.95rem;
+}
+
+.auth-toggle:hover {
+    color: #4cf;
 }
 
 .overlay h2 {
@@ -524,31 +569,100 @@ header h1 {
 
 /* Responsive */
 @media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
     header h1 {
-        font-size: 2rem;
+        font-size: 1.8rem;
         letter-spacing: 4px;
     }
 
+    .game-section {
+        padding: 15px;
+    }
+
     .player-info {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: row;
+        justify-content: space-around;
+        gap: 10px;
+        font-size: 0.9rem;
+    }
+
+    .score-display, .round-display, .player-name-display {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
+
+    .clue-text {
+        font-size: 1.1rem;
+    }
+
+    .letters-container {
+        gap: 8px;
+        margin: 20px 0;
     }
 
     .letter-tile {
-        width: 50px;
-        height: 50px;
-        font-size: 1.4rem;
+        width: 42px;
+        height: 42px;
+        font-size: 1.1rem;
+    }
+
+    .letter-tile .points {
+        font-size: 0.45rem;
+    }
+
+    .word-form input {
+        font-size: 1.1rem;
+        padding: 12px;
     }
 
     .button-group {
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
     }
 
     .btn {
         width: 100%;
+        padding: 10px 15px;
+        font-size: 0.85rem;
+    }
+
+    .btn-large {
+        grid-column: span 2;
     }
 
     .leaderboard-list li {
-        padding: 12px 15px;
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+
+    .overlay {
+        padding: 15px;
+    }
+
+    .rules {
+        padding: 15px;
+    }
+
+    .rules h3 {
+        font-size: 1.2rem;
+    }
+
+    .rules li {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .player-info {
+        flex-wrap: wrap;
+    }
+    
+    .player-name-display {
+        width: 100%;
+        text-align: center;
     }
 }

@@ -6,6 +6,7 @@ const path = require('path');
 const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 const js = fs.readFileSync(path.join(__dirname, 'game.js'), 'utf8');
 const css = fs.readFileSync(path.join(__dirname, 'style.css'), 'utf8');
+const csv = fs.readFileSync(path.join(__dirname, 'questions.csv'), 'utf8');
 
 // Create simple HTTP server
 const server = http.createServer((req, res) => {
@@ -18,9 +19,15 @@ const server = http.createServer((req, res) => {
     } else if (req.url === '/style.css') {
         res.writeHead(200, { 'Content-Type': 'text/css' });
         res.end(css);
+    } else if (req.url === '/questions.csv') {
+        res.writeHead(200, { 'Content-Type': 'text/csv' });
+        res.end(csv);
     } else if (req.url === '/api/leaderboard') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, scores: [] }));
+    } else if (req.url === '/api/auth') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, message: 'Mock auth success' }));
     } else {
         res.writeHead(404);
         res.end('Not Found');

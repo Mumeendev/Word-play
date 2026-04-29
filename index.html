@@ -19,6 +19,12 @@
                 <div class="round-display">Round: <span id="round">1</span> / <span id="maxRounds">5</span></div>
                 <div class="player-name-display">Player: <span id="playerDisplay">---</span></div>
             </div>
+            
+            <div id="clueContainer" class="clue-container hidden">
+                <span class="clue-label">Clue:</span>
+                <div id="clueText" class="clue-text"></div>
+            </div>
+
             <div class="letters-container" id="lettersContainer"></div>
             <div class="word-form">
                 <input type="text" id="wordInput" placeholder="Type your word here..." autocomplete="off" disabled>
@@ -51,18 +57,24 @@
                 <div class="rules">
                     <h3>How to Play:</h3>
                     <ul>
-                        <li>You'll receive 7 random letters each round</li>
-                        <li>Form as many valid English words as you can</li>
-                        <li>Longer words and rare letters score more points</li>
+                        <li>Each round, you'll see a clue and a set of scrambled letters</li>
+                        <li>Solve the clue by forming the correct word from the letters</li>
+                        <li>You can also form other valid words for extra points</li>
+                        <li>Finding the answer to the clue gives a big bonus and finishes the round</li>
                         <li>You have 5 rounds to get the highest score</li>
-                        <li>Your final score will be added to the leaderboard</li>
                     </ul>
                 </div>
                 <div class="name-input-group">
-                    <label for="playerName">Enter your name:</label>
+                    <h3 id="authTitle">Login to Play</h3>
+                    <label for="playerName">Username:</label>
                     <input type="text" id="playerName" placeholder="Type your name here" maxlength="20" autocomplete="off">
+                    
+                    <label for="playerPassword" class="auth-label">Password:</label>
+                    <input type="password" id="playerPassword" class="auth-input" placeholder="Enter password" maxlength="20" autocomplete="off">
+                    
+                    <p id="authToggle" class="auth-toggle">Don't have an account? Sign up</p>
                 </div>
-                <button id="startGame" class="btn btn-primary btn-large">Start Game</button>
+                <button id="startGame" class="btn btn-primary btn-large">Login & Start</button>
             </div>
         </div>
 
